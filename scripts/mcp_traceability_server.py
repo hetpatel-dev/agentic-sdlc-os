@@ -13,7 +13,7 @@ LEDGER_PATH = Path("governance/traceability_ledger.json")
 def load_ledger():
     if not LEDGER_PATH.exists():
         return {"version": "1.0.0", "tasks": {}, "requirements": {}, "adrs": {}}
-    with open(LEDGER_PATH, "r", encoding="utf-8") as f:
+    with open(LEDGER_PATH, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 def save_ledger(data):
@@ -27,7 +27,7 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "task_id": {"type": "string", "description": "The task ID (e.g. TASK-101)"}
+                "task_id": {"type": "string", "description": "The task ID (e.g. TASK-001)"}
             },
             "required": ["task_id"]
         }

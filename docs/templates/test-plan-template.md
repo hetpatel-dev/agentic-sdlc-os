@@ -19,9 +19,9 @@
 
 | Requirement ID | Acceptance Criterion | Test Case File | Test Type | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| `REQ-101` | Given valid payload, returns 200 | `tests/test_api.py::test_valid_payload` | Unit | PASSED |
-| `REQ-101` | Given missing key, returns 400 | `tests/test_api.py::test_missing_key` | Unit | PASSED |
-| `REQ-102` | Database record persists transaction | `tests/test_integration.py::test_db_persist` | Integration | PASSED |
+| `REQ-001` | Given valid payload, returns 200 | `tests/test_api.py::test_valid_payload` | Unit | PASSED |
+| `REQ-001` | Given missing key, returns 400 | `tests/test_api.py::test_missing_key` | Unit | PASSED |
+| `REQ-002` | Database record persists transaction | `tests/test_integration.py::test_db_persist` | Integration | PASSED |
 
 ---
 

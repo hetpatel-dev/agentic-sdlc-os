@@ -1,6 +1,6 @@
 {
   "name": "agentic-sdlc-os",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Production-grade AI-native Software Development Lifecycle (SDLC) operating system for Antigravity, orchestrating requirements discovery through deployment, monitoring, and continuous improvement.",
   "author": {
     "name": "Software Factory Team"

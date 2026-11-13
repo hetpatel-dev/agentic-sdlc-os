@@ -2,9 +2,11 @@
 """
 security_check.py - Security & Secret Scanner for Agentic SDLC OS
 Runs as pre-tool/post-tool hook and pre-commit audit to prevent secrets and dangerous actions.
+Natively implements the Antigravity hook protocol when invoked with --hook.
 """
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -21,18 +23,27 @@ SECRET_PATTERNS = [
     (r"AIza[0-9A-Za-z\\-_]{35}", "Google API Key")
 ]
 
-# High-risk destructive commands
+# High-risk destructive commands (POSIX & Windows)
 DANGEROUS_COMMANDS = [
-    r"rm\s+-rf\s+(?:/|\.\.|\~|\*)",
+    r"rm\s+-(?:r[fF]|[fF]r)\s+(?:/|\.\.|\~|\*)",
+    r"Remove-Item\s+.*-Recurse\s+.*-Force",
+    r"del\s+.*\/[sS]\s+.*\/[qQ]",
+    r"rmdir\s+.*\/[sS]\s+.*\/[qQ]",
+    r"format\s+[a-zA-Z]:",
     r"DROP\s+(?:DATABASE|SCHEMA|TABLE)\s+",
     r"git\s+push\s+.*--force\s+origin\s+(?:main|master|prod|production)",
     r"mkfs(?:\.[a-z0-9]+)?\s+",
     r"dd\s+if=.*of=/dev/[a-z]+"
 ]
 
-# Ignored paths
-IGNORE_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", ".gemini"}
+# Ignored paths and extensions
+IGNORE_DIRS = {".git", ".venv", "venv", "node_modules", "__pycache__", ".gemini", ".mypy_cache"}
 IGNORE_FILES = {"package-lock.json", "poetry.lock", "traceability_ledger.json"}
+IGNORE_EXTENSIONS = {
+    ".pyc", ".pyo", ".pyd", ".png", ".jpg", ".jpeg", ".gif", ".ico",
+    ".svg", ".exe", ".dll", ".so", ".dylib", ".bin", ".zip", ".tar",
+    ".gz", ".7z", ".pdf", ".woff", ".woff2", ".ttf", ".eot"
+}
 
 def scan_text_for_secrets(text, source_name="<input>"):
     findings = []
@@ -55,12 +66,16 @@ def scan_command_for_danger(cmd):
 
 def scan_directory(root_dir="."):
     all_findings = []
-    for path in Path(root_dir).rglob("*"):
-        if path.is_file():
-            parts = set(path.parts)
-            if parts & IGNORE_DIRS or path.name in IGNORE_FILES:
+    for root, dirs, files in os.walk(root_dir):
+        # Prune ignored directories in-place so os.walk skips them entirely
+        dirs[:] = [d for d in dirs if d not in IGNORE_DIRS]
+        for file in files:
+            if file in IGNORE_FILES:
                 continue
-            if path.name == "security_check.py":
+            path = Path(root) / file
+            if path.suffix.lower() in IGNORE_EXTENSIONS:
+                continue
+            if file == "security_check.py":
                 continue
             try:
                 content = path.read_text(encoding="utf-8", errors="ignore")
@@ -75,8 +90,53 @@ def main():
     parser.add_argument("--stage", choices=["pre-command", "post-write", "audit"], default="audit")
     parser.add_argument("--command", help="Command string to audit (for pre-command stage)")
     parser.add_argument("--file", help="Specific file to audit")
+    parser.add_argument("--hook", action="store_true", help="Run in Antigravity hook mode (reads stdin JSON, writes stdout decision JSON)")
     args = parser.parse_args()
 
+    # Antigravity Hook Mode
+    if args.hook:
+        try:
+            raw = sys.stdin.read()
+            payload = json.loads(raw) if raw.strip() else {}
+        except Exception:
+            payload = {}
+
+        tool_call = payload.get("toolCall", {})
+        tool_args = tool_call.get("args", {})
+
+        if args.stage == "pre-command":
+            cmd = tool_args.get("CommandLine") or tool_args.get("command") or args.command or os.environ.get("AGY_TOOL_COMMAND", "")
+            if cmd:
+                danger = scan_command_for_danger(cmd)
+                if danger:
+                    resp = {"decision": "deny", "reason": danger}
+                    sys.stdout.write(json.dumps(resp) + "\n")
+                    sys.stdout.flush()
+                    sys.exit(0)
+            resp = {"decision": "allow"}
+            sys.stdout.write(json.dumps(resp) + "\n")
+            sys.stdout.flush()
+            sys.exit(0)
+
+        elif args.stage == "post-write":
+            target_path = tool_args.get("Path") or args.file
+            content = tool_args.get("Content")
+            if target_path and not content and Path(target_path).exists():
+                try:
+                    content = Path(target_path).read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    content = ""
+            findings = scan_text_for_secrets(content or "", target_path or "<hook>")
+            if findings:
+                resp = {"decision": "deny", "reason": f"Secrets detected in written content: {'; '.join(findings)}"}
+                sys.stdout.write(json.dumps(resp) + "\n")
+                sys.stdout.flush()
+                sys.exit(0)
+            sys.stdout.write(json.dumps({}) + "\n")
+            sys.stdout.flush()
+            sys.exit(0)
+
+    # CLI / Pre-commit / CI Audit Mode
     if args.stage == "pre-command":
         cmd = args.command or os.environ.get("AGY_TOOL_COMMAND", "")
         if cmd:

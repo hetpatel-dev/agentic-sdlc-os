@@ -79,12 +79,13 @@ class TestFrameworkIntegrity(unittest.TestCase):
             content = rule_path.read_text(encoding="utf-8")
             self.assertIn("#", content, f"Rule {rule} has no markdown headings")
 
-    def test_all_30_agents_exist_and_valid(self):
+    def test_all_31_agents_exist_and_valid(self):
         agents_dir = Path(".agents/agents")
         self.assertTrue(agents_dir.is_dir(), "Agents directory .agents/agents missing")
 
         agent_files = list(agents_dir.glob("*.md"))
-        self.assertGreaterEqual(len(agent_files), 30, f"Expected at least 30 agents, found {len(agent_files)}")
+        self.assertGreaterEqual(len(agent_files), 31, f"Expected at least 31 agents, found {len(agent_files)}")
+        self.assertTrue((agents_dir / "code-reviewer.md").exists(), "Missing code-reviewer.md in .agents/agents")
 
         for af in agent_files:
             content = af.read_text(encoding="utf-8")
@@ -105,6 +106,12 @@ class TestFrameworkIntegrity(unittest.TestCase):
                 for line in tools_block.strip().splitlines():
                     tname = line.strip().lstrip("-").strip()
                     self.assertIn(tname, VALID_ANTIGRAVITY_TOOLS, f"Agent {af.name} uses invalid tool name '{tname}'")
+
+        # In framework source repository or plugin distribution, verify root agents/ mirror
+        if Path("agents").is_dir():
+            for af in agent_files:
+                root_af = Path("agents") / af.name
+                self.assertTrue(root_af.exists(), f"Agent {af.name} not synchronized to root agents/")
 
     def test_all_18_skills_exist_and_valid(self):
         skills_dir = Path(".agents/skills")
@@ -145,6 +152,10 @@ class TestFrameworkIntegrity(unittest.TestCase):
             self.assertIn(f"name: {sname}", fm, f"{sname}/SKILL.md name mismatch in frontmatter")
             self.assertIn("description:", fm, f"{sname}/SKILL.md missing description")
 
+            if Path("skills").is_dir():
+                root_skill = Path("skills") / sname / "SKILL.md"
+                self.assertTrue(root_skill.exists(), f"Skill {sname} not synchronized to root skills/")
+
     def test_manifests_are_valid_json(self):
         manifests = [
             ".agents/rules.json",
@@ -155,13 +166,15 @@ class TestFrameworkIntegrity(unittest.TestCase):
             "governance/quality_gates.json",
             "governance/traceability_ledger.json"
         ]
-        # Validate plugin.json if present or if running in framework source repository
-        if Path("plugin.json").exists() or Path(".github/workflows/sdlc-gates.yml").exists():
-            manifests.append("plugin.json")
+        # Validate root manifests if present
+        for optional_manifest in ["plugin.json", "hooks.json", "mcp_config.json", "marketplace.json"]:
+            if Path(optional_manifest).exists():
+                manifests.append(optional_manifest)
+
         for m in manifests:
             p = Path(m)
             self.assertTrue(p.exists(), f"Missing manifest file: {m}")
-            with open(p, "r", encoding="utf-8") as f:
+            with open(p, "r", encoding="utf-8-sig") as f:
                 try:
                     data = json.load(f)
                     self.assertIsInstance(data, dict, f"Manifest {m} must be a JSON object")
@@ -170,7 +183,7 @@ class TestFrameworkIntegrity(unittest.TestCase):
 
     def test_quality_gates_complete(self):
         gates_path = Path("governance/quality_gates.json")
-        with open(gates_path, "r", encoding="utf-8") as f:
+        with open(gates_path, "r", encoding="utf-8-sig") as f:
             gates = json.load(f).get("gates", {})
         expected_gates = [f"G{i}" for i in range(12)]
         for g in expected_gates:
@@ -179,6 +192,12 @@ class TestFrameworkIntegrity(unittest.TestCase):
             self.assertIn("stage", gates[g])
             self.assertIn("owner", gates[g])
             self.assertIn("exit_criteria", gates[g])
+
+            # Ensure the required approver agent persona actually exists!
+            approver = gates[g].get("required_approver")
+            if approver:
+                agent_md = Path(".agents/agents") / f"{approver}.md"
+                self.assertTrue(agent_md.exists(), f"Required approver agent '{approver}' for gate {g} missing in .agents/agents/")
 
     def test_templates_exist(self):
         templates = [
@@ -202,7 +221,12 @@ class TestFrameworkIntegrity(unittest.TestCase):
             "scripts/gate_validator.py",
             "scripts/security_check.py",
             "scripts/mcp_traceability_server.py",
-            "scripts/mcp_gate_server.py"
+            "scripts/mcp_gate_server.py",
+            "scripts/validate_framework.py",
+            "scripts/bootstrap.ps1",
+            "scripts/bootstrap.sh",
+            "scripts/install.ps1",
+            "scripts/install.sh"
         ]
         for s in scripts:
             p = Path(s)

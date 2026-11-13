@@ -27,4 +27,4 @@ Description of components, ingress points, egress points, and trust boundaries.
 ---
 
 ## 3. Residual Risks & Action Items
-- Item 1: Linked to `TASK-XXX`
+- Item 1: Linked to `TASK-001`

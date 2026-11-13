@@ -43,6 +43,7 @@ This repository is powered by **Agentic SDLC OS**, an AI-native Software Develop
 - **L0 Executive Orchestrator (`sdlc-orchestrator`)**: Coordinates lifecycle workflows, decomposes business requests, manages dependency handoffs, enforces gates, and synthesizes deliverables.
 - **L1 Domain Leads (16 agents)**: Own the technical outcomes of their respective domains.
 - **Cross-Domain Critics & Governors**:
+  - `code-reviewer`: Dedicated peer reviewer auditing coding standards, exception safety, and Gate G4 Code Quality.
   - `technical-critic`: Red-teams designs, challenges assumptions, uncovers hidden coupling and failure modes.
   - `independent-verifier`: Validates deliverables against acceptance criteria before gate transitions.
   - `change-impact-analyzer`: Computes blast radius across services, schemas, and dependencies.

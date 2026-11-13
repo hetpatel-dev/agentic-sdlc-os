@@ -2,7 +2,7 @@
 
 ```yaml
 task:
-  id: TASK-101
+  id: TASK-001
   title: Implement User Authentication Service
   domain: development
   status: IN_PROGRESS
@@ -13,15 +13,15 @@ task:
   traceability:
     objective_id: OBJ-001
     requirement_ids:
-      - REQ-101
-      - REQ-102
+      - REQ-001
+      - REQ-002
     adr_ids:
-      - ADR-001
+      - ADR-0001
     commits:
       - "a1b2c3d"
     test_case_ids:
-      - TEST-101
-      - TEST-102
+      - TEST-001
+      - TEST-002
     release_version: "v1.0.0"
 
   artifacts:

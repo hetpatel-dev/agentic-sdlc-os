@@ -13,6 +13,15 @@ from pathlib import Path
 
 LEDGER_PATH = Path("governance/traceability_ledger.json")
 
+VALID_DOMAINS = [
+    "strategy", "requirements", "architecture", "ux", "delivery",
+    "development", "data", "quality", "security", "performance",
+    "devops", "release", "operations", "observability", "maintenance", "governance"
+]
+
+VALID_GATES = ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "CLOSED"]
+VALID_STATUSES = ["PROPOSED", "IN_PROGRESS", "REVIEW", "BLOCKED", "COMPLETED", "CLOSED"]
+
 def load_ledger():
     if not LEDGER_PATH.exists():
         LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -27,7 +36,7 @@ def load_ledger():
         }
         save_ledger(data)
         return data
-    with open(LEDGER_PATH, "r", encoding="utf-8") as f:
+    with open(LEDGER_PATH, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 def save_ledger(data):
@@ -42,13 +51,82 @@ def cmd_init(args):
     print(f"     Tasks tracked: {len(ledger.get('tasks', {}))}")
     print(f"     Requirements tracked: {len(ledger.get('requirements', {}))}")
 
+def cmd_create_objective(args):
+    ledger = load_ledger()
+    obj_id = args.id
+    if not obj_id:
+        existing = [int(k.replace("OBJ-", "")) for k in ledger.get("objectives", {}).keys() if k.startswith("OBJ-") and k.replace("OBJ-", "").isdigit()]
+        next_num = max(existing) + 1 if existing else 1
+        obj_id = f"OBJ-{next_num:03d}"
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    obj = {
+        "id": obj_id,
+        "title": args.title,
+        "status": args.status or "APPROVED",
+        "created_at": now
+    }
+    ledger.setdefault("objectives", {})[obj_id] = obj
+    save_ledger(ledger)
+    print(f"[SUCCESS] Registered objective {obj_id}: {args.title}")
+
+def cmd_create_requirement(args):
+    ledger = load_ledger()
+    req_id = args.id
+    if not req_id:
+        existing = [int(k.replace("REQ-", "")) for k in ledger.get("requirements", {}).keys() if k.startswith("REQ-") and k.replace("REQ-", "").isdigit()]
+        next_num = max(existing) + 1 if existing else 1
+        req_id = f"REQ-{next_num:03d}"
+
+    req = {
+        "id": req_id,
+        "title": args.title,
+        "objective_id": args.obj,
+        "doc_path": args.doc or "",
+        "status": args.status or "APPROVED"
+    }
+    ledger.setdefault("requirements", {})[req_id] = req
+    save_ledger(ledger)
+    print(f"[SUCCESS] Registered requirement {req_id}: {args.title} (Objective: {args.obj})")
+
+def cmd_create_adr(args):
+    ledger = load_ledger()
+    adr_id = args.id
+    if not adr_id:
+        existing = []
+        for k in ledger.get("adrs", {}).keys():
+            cleaned = k.replace("ADR-", "")
+            if cleaned.isdigit():
+                existing.append(int(cleaned))
+        next_num = max(existing) + 1 if existing else 1
+        adr_id = f"ADR-{next_num:04d}"
+
+    adr = {
+        "id": adr_id,
+        "title": args.title,
+        "status": args.status or "ACCEPTED",
+        "doc_path": args.doc or ""
+    }
+    ledger.setdefault("adrs", {})[adr_id] = adr
+    save_ledger(ledger)
+    print(f"[SUCCESS] Registered ADR {adr_id}: {args.title}")
+
 def cmd_create_task(args):
     ledger = load_ledger()
     task_id = args.task_id
     if not task_id:
         existing = [int(k.replace("TASK-", "")) for k in ledger["tasks"].keys() if k.startswith("TASK-") and k.replace("TASK-", "").isdigit()]
-        next_num = max(existing) + 1 if existing else 101
+        next_num = max(existing) + 1 if existing else 1
         task_id = f"TASK-{next_num:03d}"
+
+    if args.domain not in VALID_DOMAINS:
+        print(f"[ERROR] Invalid domain '{args.domain}'. Allowed domains: {', '.join(VALID_DOMAINS)}", file=sys.stderr)
+        sys.exit(1)
+
+    gate = args.gate or "G0"
+    if gate not in VALID_GATES:
+        print(f"[ERROR] Invalid gate '{gate}'. Allowed gates: {', '.join(VALID_GATES)}", file=sys.stderr)
+        sys.exit(1)
 
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     task = {
@@ -56,15 +134,15 @@ def cmd_create_task(args):
         "title": args.title,
         "domain": args.domain,
         "status": "PROPOSED",
-        "current_gate": args.gate or "G0",
+        "current_gate": gate,
         "created_at": now,
         "updated_at": now,
         "assigned_agent": args.agent or "sdlc-orchestrator",
         "traceability": {
             "objective_id": args.obj or "",
-            "requirement_ids": args.req.split(",") if args.req else [],
+            "requirement_ids": [r.strip() for r in args.req.split(",") if r.strip()] if args.req else [],
             "user_story_ids": [],
-            "adr_ids": args.adr.split(",") if args.adr else [],
+            "adr_ids": [a.strip() for a in args.adr.split(",") if a.strip()] if args.adr else [],
             "commits": [],
             "test_case_ids": [],
             "release_version": ""
@@ -193,14 +271,16 @@ def cmd_matrix(args):
         "# Software Factory — End-to-End Traceability Matrix",
         f"**Generated:** {datetime.datetime.now(datetime.timezone.utc).isoformat()}",
         "",
-        "| Task ID | Domain | Title | Requirements | ADRs | Current Gate | Status | Artifacts |",
-        "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
+        "| Task ID | Domain | Title | Objective | Requirements | ADRs | Current Gate | Status | Artifacts |",
+        "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
     ]
-    for tid, t in sorted(ledger["tasks"].items()):
-        reqs = "<br>".join(t["traceability"].get("requirement_ids", [])) or "-"
-        adrs = "<br>".join(t["traceability"].get("adr_ids", [])) or "-"
+    for tid, t in sorted(ledger.get("tasks", {}).items()):
+        trace = t.get("traceability", {})
+        obj = trace.get("objective_id", "") or "-"
+        reqs = "<br>".join(trace.get("requirement_ids", [])) or "-"
+        adrs = "<br>".join(trace.get("adr_ids", [])) or "-"
         artifacts = f"{len(t.get('artifacts', []))} files"
-        lines.append(f"| `{tid}` | {t.get('domain','')} | {t.get('title','')} | {reqs} | {adrs} | **{t.get('current_gate','')}** | {t.get('status','')} | {artifacts} |")
+        lines.append(f"| `{tid}` | {t.get('domain','')} | {t.get('title','')} | {obj} | {reqs} | {adrs} | **{t.get('current_gate','')}** | {t.get('status','')} | {artifacts} |")
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -209,16 +289,46 @@ def cmd_matrix(args):
 def cmd_check(args):
     ledger = load_ledger()
     issues = []
-    for tid, t in ledger["tasks"].items():
+    
+    # Check tasks
+    for tid, t in ledger.get("tasks", {}).items():
+        # Validate domain
+        if t.get("domain") not in VALID_DOMAINS:
+            issues.append(f"Task {tid}: Invalid domain '{t.get('domain')}'.")
+        # Validate gate
+        if t.get("current_gate") not in VALID_GATES:
+            issues.append(f"Task {tid}: Invalid current_gate '{t.get('current_gate')}'.")
+        # Validate status
+        if t.get("status") not in VALID_STATUSES:
+            issues.append(f"Task {tid}: Invalid status '{t.get('status')}'.")
+
         # Check artifacts exist on disk
         for art in t.get("artifacts", []):
             if not Path(art).exists():
                 issues.append(f"Task {tid}: Artifact file does not exist on disk: {art}")
 
         # Check requirement backlinks
-        for req in t["traceability"].get("requirement_ids", []):
+        trace = t.get("traceability", {})
+        for req in trace.get("requirement_ids", []):
             if not req.startswith("REQ-"):
                 issues.append(f"Task {tid}: Malformed requirement ID '{req}' (must start with REQ-)")
+            elif ledger.get("requirements") and req not in ledger["requirements"]:
+                issues.append(f"Task {tid}: Linked requirement '{req}' not registered in ledger['requirements'].")
+
+        # Check ADR backlinks
+        for adr in trace.get("adr_ids", []):
+            if not adr.startswith("ADR-"):
+                issues.append(f"Task {tid}: Malformed ADR ID '{adr}' (must start with ADR-)")
+            elif ledger.get("adrs") and adr not in ledger["adrs"]:
+                issues.append(f"Task {tid}: Linked ADR '{adr}' not registered in ledger['adrs'].")
+
+        # Check objective backlink
+        obj_id = trace.get("objective_id")
+        if obj_id:
+            if not obj_id.startswith("OBJ-"):
+                issues.append(f"Task {tid}: Malformed objective ID '{obj_id}' (must start with OBJ-)")
+            elif ledger.get("objectives") and obj_id not in ledger["objectives"]:
+                issues.append(f"Task {tid}: Linked objective '{obj_id}' not registered in ledger['objectives'].")
 
     if issues:
         print("[WARNING] Traceability issues detected:")
@@ -236,11 +346,35 @@ def main():
     p_init = subparsers.add_parser("init", help="Initialize or verify the traceability ledger")
     p_init.set_defaults(func=cmd_init)
 
+    # create-objective
+    p_obj = subparsers.add_parser("create-objective", help="Register a business objective")
+    p_obj.add_argument("--id", required=False, help="Objective ID (e.g. OBJ-001, auto-assigned starting at 1 if omitted)")
+    p_obj.add_argument("--title", required=True, help="Objective title")
+    p_obj.add_argument("--status", default="APPROVED", help="Status (e.g. PROPOSED, APPROVED, COMPLETED)")
+    p_obj.set_defaults(func=cmd_create_objective)
+
+    # create-requirement
+    p_req = subparsers.add_parser("create-requirement", help="Register a functional requirement")
+    p_req.add_argument("--id", required=False, help="Requirement ID (e.g. REQ-001, auto-assigned starting at 1 if omitted)")
+    p_req.add_argument("--title", required=True, help="Requirement title")
+    p_req.add_argument("--obj", required=True, help="Parent objective ID (e.g. OBJ-001)")
+    p_req.add_argument("--doc", help="Path to PRD/spec document")
+    p_req.add_argument("--status", default="APPROVED", help="Status (e.g. PROPOSED, APPROVED)")
+    p_req.set_defaults(func=cmd_create_requirement)
+
+    # create-adr
+    p_adr = subparsers.add_parser("create-adr", help="Register an Architecture Decision Record (ADR)")
+    p_adr.add_argument("--id", required=False, help="ADR ID (e.g. ADR-0001, auto-assigned starting at 1 if omitted)")
+    p_adr.add_argument("--title", required=True, help="ADR title")
+    p_adr.add_argument("--doc", help="Path to ADR document")
+    p_adr.add_argument("--status", default="ACCEPTED", help="Status (e.g. PROPOSED, ACCEPTED, DEPRECATED)")
+    p_adr.set_defaults(func=cmd_create_adr)
+
     # create-task
     p_create = subparsers.add_parser("create-task", help="Create a new tracked task")
     p_create.add_argument("--title", required=True, help="Task title")
     p_create.add_argument("--domain", required=True, help="SDLC domain")
-    p_create.add_argument("--task-id", help="Explicit task ID (e.g. TASK-101)")
+    p_create.add_argument("--task-id", help="Explicit task ID (e.g. TASK-001, auto-assigned starting at 1 if omitted)")
     p_create.add_argument("--gate", default="G0", help="Initial gate")
     p_create.add_argument("--agent", help="Assigned agent")
     p_create.add_argument("--obj", help="Objective ID")

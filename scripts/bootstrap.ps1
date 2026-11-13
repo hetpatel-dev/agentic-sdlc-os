@@ -22,17 +22,40 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
 $pyVer = python --version
 Write-Host "[OK] Python detected: $pyVer" -ForegroundColor Green
 
-# 3. Configure Git Pre-Commit Hook (Optional on Windows)
-$shPath = "C:\Program Files\Git\usr\bin\sh.exe"
+# 3. Configure Git Pre-Commit Hook (Cross-Platform)
+$shCmd = Get-Command sh -ErrorAction SilentlyContinue
+$shPath = $null
+if ($shCmd) {
+    $shPath = $shCmd.Source
+} else {
+    foreach ($candidate in @(
+        "C:\Program Files\Git\bin\sh.exe",
+        "C:\Program Files\Git\usr\bin\sh.exe",
+        "C:\Program Files (x86)\Git\bin\sh.exe",
+        "$env:LOCALAPPDATA\Programs\Git\bin\sh.exe"
+    )) {
+        if (Test-Path $candidate) {
+            $shPath = $candidate
+            break
+        }
+    }
+}
+
 $hookDir = ".git/hooks"
-if ((Test-Path $shPath) -and (Test-Path $hookDir)) {
+if ($shPath -and (Test-Path $hookDir)) {
     $preCommitPath = Join-Path $hookDir "pre-commit"
     $hookContent = @"
 #!/bin/sh
 # Agentic SDLC OS Pre-Commit Security Hook
+echo "[PRE-COMMIT] Scanning for plaintext secrets and credentials..."
 python scripts/security_check.py --stage audit 2>/dev/null || python3 scripts/security_check.py --stage audit
+if [ `$? -ne 0 ]; then
+    echo "[PRE-COMMIT BLOCKED] Commit contains hardcoded secrets or security violations."
+    exit 1
+fi
 "@
-    Set-Content -Path $preCommitPath -Value $hookContent -Encoding UTF8
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($preCommitPath, ($hookContent -replace "`r`n", "`n"), $utf8NoBom)
     Write-Host "[OK] Git pre-commit security hook installed at $preCommitPath" -ForegroundColor Green
 } else {
     Write-Host "[INFO] Git pre-commit hook skipped on Windows (use 'python scripts/security_check.py --stage audit' for audits)." -ForegroundColor Yellow

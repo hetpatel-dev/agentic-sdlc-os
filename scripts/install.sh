@@ -52,36 +52,74 @@ if [ "$SUBMODULE_MODE" = true ]; then
     echo "[GIT] Adding submodule at '.agents/sdlc-os'..."
     git submodule add "$REPO_URL" .agents/sdlc-os
 else
-    TEMP_DIR=$(mktemp -d)
-    echo "[DOWNLOAD] Cloning latest release..."
-    git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    LOCAL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-    echo "[DEPLOY] Copying .agents, governance, docs, scripts to '$TARGET_DIR'..."
-    cp -r "$TEMP_DIR/.agents" "$TARGET_DIR/"
-    cp -r "$TEMP_DIR/governance" "$TARGET_DIR/"
-    cp -r "$TEMP_DIR/scripts" "$TARGET_DIR/"
-
-    if [ ! -d "$TARGET_DIR/docs" ]; then
-        cp -r "$TEMP_DIR/docs" "$TARGET_DIR/"
+    IS_TEMP=false
+    if [ -f "$LOCAL_ROOT/plugin.json" ]; then
+        echo "[LOCAL] Deploying directly from local repository at '$LOCAL_ROOT'..."
+        TEMP_SOURCE="$LOCAL_ROOT"
     else
-        mkdir -p "$TARGET_DIR/docs/templates"
-        cp -r "$TEMP_DIR/docs/templates/"* "$TARGET_DIR/docs/templates/"
-        for d in adr api architecture database governance operations product releases requirements security testing; do
-            mkdir -p "$TARGET_DIR/docs/$d"
-        done
+        TEMP_DIR=$(mktemp -d)
+        echo "[DOWNLOAD] Cloning latest release..."
+        git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
+        TEMP_SOURCE="$TEMP_DIR"
+        IS_TEMP=true
     fi
+
+    mkdir -p "$TARGET_DIR"
+
+    echo "[DEPLOY] Copying .agents, scripts, skills, agents, rules to '$TARGET_DIR'..."
+    cp -r "$TEMP_SOURCE/.agents" "$TARGET_DIR/.agents"
+    cp -r "$TEMP_SOURCE/scripts" "$TARGET_DIR/scripts"
+    if [ -d "$TEMP_SOURCE/skills" ]; then
+        cp -r "$TEMP_SOURCE/skills" "$TARGET_DIR/skills"
+    fi
+    if [ -d "$TEMP_SOURCE/agents" ]; then
+        cp -r "$TEMP_SOURCE/agents" "$TARGET_DIR/agents"
+    fi
+    if [ -d "$TEMP_SOURCE/rules" ]; then
+        cp -r "$TEMP_SOURCE/rules" "$TARGET_DIR/rules"
+    fi
+
+    # Governance: Deploy schemas & quality gates; ensure clean empty traceability ledger for new projects
+    mkdir -p "$TARGET_DIR/governance/schemas"
+    cp -r "$TEMP_SOURCE/governance/schemas/"* "$TARGET_DIR/governance/schemas/"
+    cp "$TEMP_SOURCE/governance/quality_gates.json" "$TARGET_DIR/governance/"
+
+    if [ ! -f "$TARGET_DIR/governance/traceability_ledger.json" ]; then
+        cat << 'EOF' > "$TARGET_DIR/governance/traceability_ledger.json"
+{
+  "version": "1.0.0",
+  "system": "Agentic SDLC OS",
+  "last_updated": "2026-11-13T00:00:00Z",
+  "objectives": {},
+  "requirements": {},
+  "adrs": {},
+  "tasks": {}
+}
+EOF
+    fi
+
+    # Docs: Create empty directory structure and deploy templates ONLY (never scaffold testing/sample artifacts)
+    for d in adr api architecture database governance operations product releases requirements security testing testing/performance templates; do
+        mkdir -p "$TARGET_DIR/docs/$d"
+    done
+    cp -r "$TEMP_SOURCE/docs/templates/"* "$TARGET_DIR/docs/templates/"
 
     if [ ! -f "$TARGET_DIR/AGENTS.md" ]; then
-        cp "$TEMP_DIR/AGENTS.md" "$TARGET_DIR/"
+        cp "$TEMP_SOURCE/AGENTS.md" "$TARGET_DIR/"
     fi
     if [ ! -f "$TARGET_DIR/GEMINI.md" ]; then
-        cp "$TEMP_DIR/GEMINI.md" "$TARGET_DIR/"
+        cp "$TEMP_SOURCE/GEMINI.md" "$TARGET_DIR/"
     fi
     if [ ! -f "$TARGET_DIR/.gitignore" ]; then
-        cp "$TEMP_DIR/.gitignore" "$TARGET_DIR/"
+        cp "$TEMP_SOURCE/.gitignore" "$TARGET_DIR/"
     fi
 
-    rm -rf "$TEMP_DIR"
+    if [ "$IS_TEMP" = true ]; then
+        rm -rf "$TEMP_DIR"
+    fi
 fi
 
 echo ""

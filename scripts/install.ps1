@@ -51,39 +51,90 @@ if ($Submodule) {
     Write-Host "[GIT] Adding as git submodule at '.agents/sdlc-os'..." -ForegroundColor Yellow
     git submodule add $RepoUrl .agents/sdlc-os
 } else {
-    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("sdlc-os-" + [System.Guid]::NewGuid().ToString().Substring(0,8))
-    Write-Host "[DOWNLOAD] Cloning latest release from GitHub..." -ForegroundColor Yellow
-    git clone --depth 1 $RepoUrl $tempDir
-
-    # Copy .agents, rules, skills, governance, docs, scripts into target
-    Write-Host "[DEPLOY] Copying .agents, governance, docs, scripts to '$TargetDir'..." -ForegroundColor Yellow
-    Copy-Item -Path "$tempDir\.agents" -Destination $TargetDir -Recurse -Force
-    Copy-Item -Path "$tempDir\governance" -Destination $TargetDir -Recurse -Force
-    Copy-Item -Path "$tempDir\scripts" -Destination $TargetDir -Recurse -Force
-    
-    if (-not (Test-Path (Join-Path $TargetDir "docs"))) {
-        Copy-Item -Path "$tempDir\docs" -Destination $TargetDir -Recurse -Force
-    } else {
-        $destTemplates = Join-Path $TargetDir "docs\templates"
-        New-Item -ItemType Directory -Path $destTemplates -Force | Out-Null
-        Copy-Item -Path "$tempDir\docs\templates\*" -Destination $destTemplates -Recurse -Force
-        foreach ($d in @("adr", "api", "architecture", "database", "governance", "operations", "product", "releases", "requirements", "security", "testing")) {
-            New-Item -ItemType Directory -Path (Join-Path $TargetDir "docs\$d") -Force | Out-Null
-        }
+    $sourceRoot = $null
+    if (Test-Path (Join-Path $PSScriptRoot "..\plugin.json")) {
+        $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    } elseif (Test-Path "plugin.json") {
+        $sourceRoot = (Get-Location).Path
     }
+
+    $isTemp = $false
+    if ($sourceRoot) {
+        Write-Host "[LOCAL] Deploying directly from local repository at '$sourceRoot'..." -ForegroundColor Yellow
+        $tempSource = $sourceRoot
+    } else {
+        $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("sdlc-os-" + [System.Guid]::NewGuid().ToString().Substring(0,8))
+        Write-Host "[DOWNLOAD] Cloning latest release from GitHub..." -ForegroundColor Yellow
+        git clone --depth 1 $RepoUrl $tempDir
+        $tempSource = $tempDir
+        $isTemp = $true
+    }
+
+    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+
+    # Copy .agents, rules, skills, agents, scripts into target
+    Write-Host "[DEPLOY] Copying .agents, scripts, skills, agents, rules to '$TargetDir'..." -ForegroundColor Yellow
+    Copy-Item -Path "$tempSource\.agents" -Destination (Join-Path $TargetDir ".agents") -Recurse -Force
+    Copy-Item -Path "$tempSource\scripts" -Destination (Join-Path $TargetDir "scripts") -Recurse -Force
+    if (Test-Path (Join-Path $tempSource "skills")) {
+        Copy-Item -Path "$tempSource\skills" -Destination (Join-Path $TargetDir "skills") -Recurse -Force
+    }
+    if (Test-Path (Join-Path $tempSource "agents")) {
+        Copy-Item -Path "$tempSource\agents" -Destination (Join-Path $TargetDir "agents") -Recurse -Force
+    }
+    if (Test-Path (Join-Path $tempSource "rules")) {
+        Copy-Item -Path "$tempSource\rules" -Destination (Join-Path $TargetDir "rules") -Recurse -Force
+    }
+    
+    # Governance: Deploy schemas & quality gates; ensure clean empty traceability ledger for new projects
+    $destGov = Join-Path $TargetDir "governance"
+    New-Item -ItemType Directory -Path (Join-Path $destGov "schemas") -Force | Out-Null
+    Copy-Item -Path "$tempSource\governance\schemas\*" -Destination (Join-Path $destGov "schemas") -Recurse -Force
+    Copy-Item -Path "$tempSource\governance\quality_gates.json" -Destination $destGov -Force
+    
+    $destLedger = Join-Path $destGov "traceability_ledger.json"
+    if (-not (Test-Path $destLedger)) {
+        $cleanLedger = @'
+{
+  "version": "1.0.0",
+  "system": "Agentic SDLC OS",
+  "last_updated": "2026-11-13T00:00:00Z",
+  "objectives": {},
+  "requirements": {},
+  "adrs": {},
+  "tasks": {}
+}
+'@
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+        [System.IO.File]::WriteAllText($destLedger, $cleanLedger, $utf8NoBom)
+    }
+
+    # Docs: Create empty directory structure and deploy templates ONLY (never scaffold testing/sample artifacts)
+    $destDocs = Join-Path $TargetDir "docs"
+    $docDirs = @(
+        "adr", "api", "architecture", "database", "governance", 
+        "operations", "product", "releases", "requirements", 
+        "security", "testing", "testing\performance", "templates"
+    )
+    foreach ($d in $docDirs) {
+        New-Item -ItemType Directory -Path (Join-Path $destDocs $d) -Force | Out-Null
+    }
+    Copy-Item -Path "$tempSource\docs\templates\*" -Destination (Join-Path $destDocs "templates") -Recurse -Force
 
     if (-not (Test-Path (Join-Path $TargetDir "AGENTS.md"))) {
-        Copy-Item -Path "$tempDir\AGENTS.md" -Destination $TargetDir -Force
+        Copy-Item -Path "$tempSource\AGENTS.md" -Destination $TargetDir -Force
     }
     if (-not (Test-Path (Join-Path $TargetDir "GEMINI.md"))) {
-        Copy-Item -Path "$tempDir\GEMINI.md" -Destination $TargetDir -Force
+        Copy-Item -Path "$tempSource\GEMINI.md" -Destination $TargetDir -Force
     }
     if (-not (Test-Path (Join-Path $TargetDir ".gitignore"))) {
-        Copy-Item -Path "$tempDir\.gitignore" -Destination $TargetDir -Force
+        Copy-Item -Path "$tempSource\.gitignore" -Destination $TargetDir -Force
     }
     
-    # Clean up temp
-    Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    # Clean up temp if cloned
+    if ($isTemp) {
+        Remove-Item -Path $tempSource -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 Write-Host ""

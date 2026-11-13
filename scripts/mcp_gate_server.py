@@ -14,7 +14,7 @@ GATES_DEF_PATH = Path("governance/quality_gates.json")
 def load_gates():
     if not GATES_DEF_PATH.exists():
         return {}
-    with open(GATES_DEF_PATH, "r", encoding="utf-8") as f:
+    with open(GATES_DEF_PATH, "r", encoding="utf-8-sig") as f:
         return json.load(f).get("gates", {})
 
 TOOLS = [

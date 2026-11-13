@@ -34,9 +34,9 @@
 
 ## 4. Functional Requirements
 
-### `REQ-101`: [Requirement Title]
+### `REQ-001`: [Requirement Title]
 - **Description:** Clear statement of functional behavior.
-- **Traces:** `US-201`
+- **Traces:** `US-001`
 - **Inputs & Triggers:**
 - **Validation Rules:**
 - **State Changes / Side Effects:**

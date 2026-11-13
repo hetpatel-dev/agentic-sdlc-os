@@ -7,8 +7,9 @@ import base64
 import hashlib
 import hmac
 import json
+import secrets
 import time
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 class AuthError(Exception):
     """Base exception for authentication failures."""
@@ -39,12 +40,12 @@ class AuthService:
     """Core authentication service for password hashing and token management."""
 
     @staticmethod
-    def hash_password(password: str, salt: bytes = None) -> str:
-        """Hashes a password using PBKDF2-HMAC-SHA256 with salt."""
+    def hash_password(password: str, salt: Optional[bytes] = None) -> str:
+        """Hashes a password using PBKDF2-HMAC-SHA256 with cryptographically secure salt."""
         if not password:
             raise ValueError("Password cannot be empty.")
         if salt is None:
-            salt = hashlib.sha256(str(time.time_ns()).encode('utf-8')).digest()[:16]
+            salt = secrets.token_bytes(16)
         dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100_000)
         return f"{_base64url_encode(salt)}${_base64url_encode(dk)}"
 
@@ -59,11 +60,11 @@ class AuthService:
             expected_dk = _base64url_decode(hash_b64)
             actual_dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100_000)
             return hmac.compare_digest(actual_dk, expected_dk)
-        except Exception as e:
-            raise AuthError(f"Password verification failed: {e}") from e
+        except Exception:
+            return False
 
     @staticmethod
-    def issue_token(subject: str, secret_key: str, ttl_seconds: int = 900, claims: Dict[str, Any] = None) -> Tuple[str, int]:
+    def issue_token(subject: str, secret_key: str, ttl_seconds: int = 900, claims: Optional[Dict[str, Any]] = None) -> Tuple[str, int]:
         """
         Issues a cryptographically signed token (HMAC-SHA256).
         Implements REQ-101.
@@ -81,7 +82,10 @@ class AuthService:
             "exp": expires_at
         }
         if claims:
-            payload.update(claims)
+            # Prevent reserved claims from being overwritten
+            reserved = {"sub", "iat", "exp"}
+            safe_claims = {k: v for k, v in claims.items() if k not in reserved}
+            payload.update(safe_claims)
 
         header = {"alg": "HS256", "typ": "JWT"}
         h_bytes = json.dumps(header, separators=(',', ':')).encode('utf-8')
@@ -95,7 +99,7 @@ class AuthService:
     @staticmethod
     def verify_token(token: str, secret_key: str) -> Dict[str, Any]:
         """
-        Verifies signature and expiration of a signed token.
+        Verifies signature, header algorithm, and expiration of a signed token.
         Implements REQ-102.
         """
         if not token or not secret_key:
@@ -108,6 +112,16 @@ class AuthService:
         h_b64, p_b64, sig_b64 = parts
         signing_input = f"{h_b64}.{p_b64}"
 
+        # 1. Validate JWT Header
+        try:
+            header = json.loads(_base64url_decode(h_b64).decode('utf-8'))
+        except Exception as e:
+            raise InvalidTokenError("Invalid token header encoding.") from e
+
+        if not isinstance(header, dict) or header.get("alg") != "HS256" or header.get("typ") != "JWT":
+            raise InvalidTokenError("Unsupported token header or algorithm.")
+
+        # 2. Verify Cryptographic Signature
         expected_sig = hmac.new(secret_key.encode('utf-8'), signing_input.encode('ascii'), hashlib.sha256).digest()
         try:
             actual_sig = _base64url_decode(sig_b64)
@@ -117,13 +131,18 @@ class AuthService:
         if not hmac.compare_digest(actual_sig, expected_sig):
             raise InvalidTokenError("Token signature mismatch.")
 
+        # 3. Decode & Verify Payload
         try:
             payload = json.loads(_base64url_decode(p_b64).decode('utf-8'))
         except Exception as e:
             raise InvalidTokenError("Invalid token payload encoding.") from e
 
+        if not isinstance(payload, dict):
+            raise InvalidTokenError("Token payload must be a JSON object.")
+
         now = int(time.time())
-        if payload.get("exp", 0) < now:
+        exp = payload.get("exp")
+        if exp is None or not isinstance(exp, (int, float)) or exp < now:
             raise TokenExpiredError("Token has expired.")
 
         return payload

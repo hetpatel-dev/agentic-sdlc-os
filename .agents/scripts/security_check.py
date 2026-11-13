@@ -1,25 +1,16 @@
 #!/usr/bin/env python3
 """
-Hook adapter for Antigravity hook runner.
-Outputs required JSON decision on stdout.
+Hook adapter delegating to root scripts/security_check.py
 """
-import json
+import os
 import sys
+from pathlib import Path
 
-def main():
-    try:
-        # Read hook payload from stdin if available
-        raw = sys.stdin.read()
-        if raw.strip():
-            payload = json.loads(raw)
-    except Exception:
-        pass
+# Add project root to sys.path
+root_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(root_dir))
 
-    # Emit required JSON output for Antigravity hook
-    resp = {"decision": "allow"}
-    sys.stdout.write(json.dumps(resp) + "\n")
-    sys.stdout.flush()
-    sys.exit(0)
+import scripts.security_check as sec
 
 if __name__ == "__main__":
-    main()
+    sec.main()

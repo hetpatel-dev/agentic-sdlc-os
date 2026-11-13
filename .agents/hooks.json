@@ -1,13 +1,13 @@
 {
   "security-pre-command-guard": {
-    "enabled": false,
+    "enabled": true,
     "PreToolUse": [
       {
         "matcher": "run_command",
         "hooks": [
           {
             "type": "command",
-            "command": "python ../scripts/security_check.py --stage pre-command",
+            "command": "python ../scripts/security_check.py --stage pre-command --hook",
             "timeout": 10
           }
         ]
@@ -15,14 +15,14 @@
     ]
   },
   "secret-post-write-guard": {
-    "enabled": false,
+    "enabled": true,
     "PostToolUse": [
       {
         "matcher": "write_file",
         "hooks": [
           {
             "type": "command",
-            "command": "python ../scripts/security_check.py --stage post-write",
+            "command": "python ../scripts/security_check.py --stage post-write --hook",
             "timeout": 10
           }
         ]
@@ -32,7 +32,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ../scripts/security_check.py --stage post-write",
+            "command": "python ../scripts/security_check.py --stage post-write --hook",
             "timeout": 10
           }
         ]

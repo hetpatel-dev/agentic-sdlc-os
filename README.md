@@ -71,6 +71,7 @@ The operating system organizes engineering responsibilities across 16 core disci
 | **16. Governance** | `engineering-governance-lead`| Traceability audits, DORA metrics, retrospectives | **G11** Project Closure |
 
 ### Cross-Domain Oversight & Specialist Workers
+- **`code-reviewer`**: Independent peer code reviewer verifying coding standards, error handling, and Gate G4 quality.
 - **`technical-critic`**: Hostile red-team reviewer who stress-tests plans, finds unstated assumptions, and blocks design flaws.
 - **`independent-verifier`**: Independent deliverable auditor verifying that acceptance criteria are tested and verified.
 - **`traceability-manager`**: Maintains the bidirectional ledger linking requirements to code and tests.
@@ -175,17 +176,17 @@ bash scripts/bootstrap.sh
 
 #### Create a Tracked Engineering Task
 ```bash
-python scripts/traceability_cli.py create-task --domain development --title "Implement JWT Authentication" --req REQ-101
+python scripts/traceability_cli.py create-task --domain development --title "Implement JWT Authentication" --req REQ-001
 ```
 
 #### Link Artifacts & Tests
 ```bash
-python scripts/traceability_cli.py link --task TASK-101 --artifact src/auth/jwt.py --test TEST-101
+python scripts/traceability_cli.py link --task-id TASK-001 --artifact src/auth/service.py --test TEST-001
 ```
 
 #### Validate Quality Gate
 ```bash
-python scripts/gate_validator.py --gate G1 --task TASK-101
+python scripts/gate_validator.py --gate G1 --task TASK-001
 ```
 
 #### Scan Repository for Plaintext Secrets

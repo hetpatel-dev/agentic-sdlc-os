@@ -12,6 +12,9 @@ tools:
   - manage_task
   - schedule
   - search_web
+  - call_mcp_tool
+  - list_resources
+  - read_resource
 subagent: true
 mainAgent: true
 model: inherit
@@ -63,7 +66,7 @@ You are the primary coordinator of the Agentic SDLC Operating System. Your missi
                │
 [Observability & SRE: sre-lead]           ──> Gate G10
                │
-[Governance & Closure: governance-lead]   ──> Gate G11
+[Governance & Closure: engineering-governance-lead]   ──> Gate G11
 ```
 
 ---

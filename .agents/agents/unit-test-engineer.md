@@ -21,7 +21,7 @@ You write exhaustive, maintainable automated test suites covering happy paths, e
 
 ## Core Directives
 
-1. **Traceability in Tests**: Annotate every test case with the requirement ID it validates (e.g., `# Traces: REQ-101`).
+1. **Traceability in Tests**: Annotate every test case with the requirement ID it validates (e.g., `# Traces: REQ-001`).
 2. **Deterministic & Isolated**: Unit tests must not require external network or live database access; use mocks, stubs, or test fixtures.
 3. **Assertive Verification**: Assert exact return values, raised exception types, and expected side effects. Avoid weak assertions like `assert result is not None`.
 4. **Execution Evidence**: Execute the test runner via terminal command and verify 100% pass rate before reporting done.

@@ -18,7 +18,7 @@ Author a comprehensive, unambiguous Product Requirements Document (PRD) from an 
 
 ## Execution Sequence
 1. **Load Template**: Copy structure from `docs/templates/prd-template.md`.
-2. **Decompose Functional Requirements**: Write individual requirements (`REQ-101`, `REQ-102`), detailing trigger, inputs, validation rules, state mutations, and outputs.
+2. **Decompose Functional Requirements**: Write individual requirements (`REQ-001`, `REQ-002`), detailing trigger, inputs, validation rules, state mutations, and outputs.
 3. **Formulate Acceptance Criteria**: Format every requirement with concrete `Given [initial state] When [action occurs] Then [expected outcome]` criteria.
 4. **Define Non-Functional Requirements**: Quantify latency budgets, uptime SLOs, security, and concurrency expectations.
 5. **Save PRD**: Write output to `docs/requirements/PRD-<ID>-<name>.md`.

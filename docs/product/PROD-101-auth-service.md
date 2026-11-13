@@ -15,14 +15,14 @@ Currently, client applications lack a standardized, cryptographically secure met
 
 ## 2. Target Personas & Workflows
 - **Client Application User:** Authenticates using secure credentials and receives a scoped session token.
-- **Downstream Microservice:** Validates incoming session tokens against public keys without database lookup overhead.
+- **Downstream Microservice:** Validates incoming session tokens using high-performance in-memory cryptographic verification without database lookup overhead.
 
 ---
 
 ## 3. Value Proposition & Success Metrics (KPIs)
 - **Token Issue Latency:** p99 < 15ms.
 - **Verification Overhead:** In-memory verification < 2ms per request.
-- **Security Standard:** Zero plaintext passwords stored; HMAC-SHA256 / Ed25519 signatures.
+- **Security Standard:** Zero plaintext passwords stored; HMAC-SHA256 symmetric signing (v1), with Ed25519 asymmetric verification roadmapped for v2.
 
 ---
 
