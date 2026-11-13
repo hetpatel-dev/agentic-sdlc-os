@@ -19,7 +19,18 @@ if ($Global) {
     $pluginDir = Join-Path $HOME ".gemini\config\plugins\agentic-sdlc-os"
     Write-Host "[INSTALL] Installing Agentic SDLC OS globally to $pluginDir..." -ForegroundColor Yellow
     
-    if (Test-Path $pluginDir) {
+    $sourceRoot = $null
+    if (Test-Path (Join-Path $PSScriptRoot "..\plugin.json")) {
+        $sourceRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+    } elseif (Test-Path "plugin.json") {
+        $sourceRoot = (Get-Location).Path
+    }
+
+    if ($sourceRoot) {
+        Write-Host "[LOCAL] Copying directly from local repository at '$sourceRoot'..." -ForegroundColor Yellow
+        New-Item -ItemType Directory -Path $pluginDir -Force | Out-Null
+        Copy-Item -Path "$sourceRoot\*" -Destination $pluginDir -Recurse -Force -Exclude ".git"
+    } elseif (Test-Path $pluginDir) {
         Write-Host "[UPDATE] Existing global installation found. Updating from GitHub..." -ForegroundColor Yellow
         git -C $pluginDir pull origin main
     } else {

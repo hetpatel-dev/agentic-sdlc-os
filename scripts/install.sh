@@ -26,7 +26,15 @@ echo "==========================================================================
 if [ "$GLOBAL_MODE" = true ]; then
     PLUGIN_DIR="$HOME/.gemini/config/plugins/agentic-sdlc-os"
     echo "[INSTALL] Installing globally to $PLUGIN_DIR..."
-    if [ -d "$PLUGIN_DIR" ]; then
+    
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    LOCAL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+    if [ -f "$LOCAL_ROOT/plugin.json" ]; then
+        echo "[LOCAL] Copying directly from local repository at '$LOCAL_ROOT'..."
+        mkdir -p "$PLUGIN_DIR"
+        cp -r "$LOCAL_ROOT"/* "$PLUGIN_DIR/"
+    elif [ -d "$PLUGIN_DIR" ]; then
         echo "[UPDATE] Existing installation found. Pulling latest..."
         git -C "$PLUGIN_DIR" pull origin main
     else
