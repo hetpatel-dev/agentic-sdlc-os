@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDLC Task Schema",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "domain",
+    "status",
+    "created_at",
+    "current_gate",
+    "assigned_agent"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TASK-[0-9]{3,}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5
+    },
+    "domain": {
+      "type": "string",
+      "enum": [
+        "strategy",
+        "requirements",
+        "architecture",
+        "ux",
+        "delivery",
+        "development",
+        "data",
+        "quality",
+        "security",
+        "performance",
+        "devops",
+        "release",
+        "operations",
+        "observability",
+        "maintenance",
+        "governance"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PROPOSED", "IN_PROGRESS", "REVIEW", "BLOCKED", "COMPLETED", "CLOSED"]
+    },
+    "current_gate": {
+      "type": "string",
+      "enum": ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "CLOSED"]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    },
+    "assigned_agent": {
+      "type": "string"
+    },
+    "traceability": {
+      "type": "object",
+      "properties": {
+        "objective_id": { "type": "string" },
+        "requirement_ids": { "type": "array", "items": { "type": "string" } },
+        "user_story_ids": { "type": "array", "items": { "type": "string" } },
+        "adr_ids": { "type": "array", "items": { "type": "string" } },
+        "commits": { "type": "array", "items": { "type": "string" } },
+        "test_case_ids": { "type": "array", "items": { "type": "string" } },
+        "release_version": { "type": "string" }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gate_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate", "status", "timestamp", "verified_by"],
+        "properties": {
+          "gate": { "type": "string" },
+          "status": { "type": "string", "enum": ["PASSED", "FAILED", "WAIVED"] },
+          "timestamp": { "type": "string" },
+          "verified_by": { "type": "string" },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    }
+  }
+}

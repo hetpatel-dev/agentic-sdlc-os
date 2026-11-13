@@ -1,0 +1,41 @@
+# Dependencies and environments
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and runtime artifacts
+*.log
+logs/
+tmp/
+temp/
+coverage/
+.nyc_output/
+.coverage
+htmlcov/
+
+# Local configuration overrides
+.env
+.env.local
+.env.*.local
+*.local
+
+# Antigravity CLI local runtimes (preserve configuration, ignore runtime session caches)
+.gemini/cache/
+.gemini/presence/
+.gemini/crashes/

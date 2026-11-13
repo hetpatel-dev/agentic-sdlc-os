@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDLC Traceability Ledger Schema",
+  "type": "object",
+  "required": ["version", "tasks", "objectives", "requirements", "adrs"],
+  "properties": {
+    "version": { "type": "string" },
+    "last_updated": { "type": "string" },
+    "objectives": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "title", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "string" },
+          "created_at": { "type": "string" }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "title", "objective_id"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "objective_id": { "type": "string" },
+          "doc_path": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
+    "adrs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["id", "title", "status"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "status": { "type": "string" },
+          "doc_path": { "type": "string" }
+        }
+      }
+    },
+    "tasks": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "./task_schema.json"
+      }
+    }
+  }
+}

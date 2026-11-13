@@ -1,0 +1,58 @@
+name: SDLC Quality Gates & Framework Verification
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  validate-framework:
+    name: Framework Integrity & Rules Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Framework Integrity
+        run: |
+          python scripts/validate_framework.py
+
+      - name: Run Security & Secret Scan
+        run: |
+          python scripts/security_check.py --stage audit
+
+      - name: Audit Traceability Ledger
+        run: |
+          python scripts/traceability_cli.py check
+
+  run-tests:
+    name: Automated Test Suites & Coverage
+    runs-on: ubuntu-latest
+    needs: validate-framework
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Execute Test Suite
+        run: |
+          if [ -d "tests" ] && [ "$(ls -A tests 2>/dev/null)" ]; then
+            python -m unittest discover -s tests -v
+          else
+            echo "No test suite defined yet; skipping."
+          fi
+
+      - name: Generate Traceability Matrix
+        run: |
+          python scripts/traceability_cli.py matrix --output docs/governance/traceability_matrix.md

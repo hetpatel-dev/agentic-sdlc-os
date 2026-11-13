@@ -1,0 +1,42 @@
+{
+  "security-pre-command-guard": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/security_check.py --stage pre-command",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "secret-post-write-guard": {
+    "enabled": true,
+    "PostToolUse": [
+      {
+        "matcher": "write_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/security_check.py --stage post-write",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "edit_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/security_check.py --stage post-write",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

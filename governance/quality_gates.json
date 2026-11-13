@@ -1,0 +1,239 @@
+{
+  "version": "1.0.0",
+  "system": "Agentic SDLC OS",
+  "gates": {
+    "G0": {
+      "name": "Business Approval",
+      "stage": "Strategy",
+      "owner": "product-strategist",
+      "required_approver": "product-strategist",
+      "entry_criteria": [
+        "Business opportunity or user request formulated"
+      ],
+      "required_artifacts": [
+        "docs/product/*.md"
+      ],
+      "exit_criteria": [
+        "Executive summary and problem statement defined",
+        "Target user personas identified",
+        "Value proposition and success KPIs quantified",
+        "Scope boundaries explicitly documented"
+      ],
+      "automated_check": "verify_product_brief"
+    },
+    "G1": {
+      "name": "Requirements Approval",
+      "stage": "Requirements",
+      "owner": "requirements-engineer",
+      "required_approver": "requirements-engineer",
+      "entry_criteria": [
+        "Gate G0 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/requirements/*.md"
+      ],
+      "exit_criteria": [
+        "All functional requirements have REQ-XXX identifiers",
+        "Given/When/Then acceptance criteria specified for every requirement",
+        "Non-functional requirements (latency, availability, security) quantified",
+        "Edge cases, boundary conditions, and error states detailed"
+      ],
+      "automated_check": "verify_requirements_spec"
+    },
+    "G2": {
+      "name": "Architecture Approval",
+      "stage": "Architecture",
+      "owner": "solution-architect",
+      "required_approver": "solution-architect",
+      "entry_criteria": [
+        "Gate G1 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/architecture/*.md",
+        "docs/adr/*.md"
+      ],
+      "exit_criteria": [
+        "System and domain context diagrams rendered in Mermaid",
+        "API and data contracts defined in docs/api/",
+        "Applicable ADRs authored and marked ACCEPTED",
+        "Challenged and reviewed by technical-critic with zero open BLOCKERS"
+      ],
+      "automated_check": "verify_architecture_spec"
+    },
+    "G3": {
+      "name": "Implementation Readiness",
+      "stage": "Development Planning",
+      "owner": "engineering-lead",
+      "required_approver": "engineering-lead",
+      "entry_criteria": [
+        "Gate G2 PASSED"
+      ],
+      "required_artifacts": [
+        "Technical implementation plan with file list"
+      ],
+      "exit_criteria": [
+        "Files to Create, Modify, or Delete identified",
+        "Dependencies and worktree allocations defined",
+        "Testing strategy and assertion targets planned"
+      ],
+      "automated_check": "verify_implementation_readiness"
+    },
+    "G4": {
+      "name": "Code Quality Review",
+      "stage": "Implementation",
+      "owner": "engineering-lead",
+      "required_approver": "code-reviewer",
+      "entry_criteria": [
+        "Gate G3 PASSED",
+        "Source code authored"
+      ],
+      "required_artifacts": [
+        "src/*"
+      ],
+      "exit_criteria": [
+        "Zero linting errors or formatting violations",
+        "Type annotations present on public interfaces",
+        "Zero silent catch blocks or swallowed exceptions",
+        "Independent review conducted with zero open BLOCKERS"
+      ],
+      "automated_check": "verify_code_quality"
+    },
+    "G5": {
+      "name": "Functional Quality",
+      "stage": "Testing",
+      "owner": "qa-lead",
+      "required_approver": "qa-lead",
+      "entry_criteria": [
+        "Gate G4 PASSED"
+      ],
+      "required_artifacts": [
+        "tests/*"
+      ],
+      "exit_criteria": [
+        "100% of automated unit and integration tests passing",
+        "Terminal test execution output captured and verified",
+        "Code branch coverage at or above 85% on modified code",
+        "All test cases annotated with requirement traceability IDs"
+      ],
+      "automated_check": "verify_test_execution"
+    },
+    "G6": {
+      "name": "Security Quality",
+      "stage": "Security Audit",
+      "owner": "security-lead",
+      "required_approver": "security-lead",
+      "entry_criteria": [
+        "Gate G5 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/security/*.md"
+      ],
+      "exit_criteria": [
+        "Secret scanner reports zero plaintext credentials or tokens",
+        "SAST / Static security analysis reports zero HIGH/CRITICAL issues",
+        "Dependency CVE audit clean",
+        "Threat model verified"
+      ],
+      "automated_check": "verify_security_audit"
+    },
+    "G7": {
+      "name": "Performance Quality",
+      "stage": "Performance Audit",
+      "owner": "performance-lead",
+      "required_approver": "performance-lead",
+      "entry_criteria": [
+        "Gate G6 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/testing/performance/*.md"
+      ],
+      "exit_criteria": [
+        "p95 latency under agreed budget (default < 200ms)",
+        "p99 latency under agreed budget (default < 500ms)",
+        "Zero memory leaks or file descriptor leaks during sustained load",
+        "Resource utilization within safe capacity limits"
+      ],
+      "automated_check": "verify_performance_metrics"
+    },
+    "G8": {
+      "name": "Release Readiness",
+      "stage": "Release Governance",
+      "owner": "release-manager",
+      "required_approver": "release-manager",
+      "entry_criteria": [
+        "Gate G0 through G7 verified as PASSED"
+      ],
+      "required_artifacts": [
+        "CHANGELOG.md",
+        "docs/releases/*.md"
+      ],
+      "exit_criteria": [
+        "Semantic version bumped appropriately",
+        "CHANGELOG updated with categorized release notes",
+        "Rollback runbook tested and documented",
+        "Release approval sign-off obtained"
+      ],
+      "automated_check": "verify_release_readiness"
+    },
+    "G9": {
+      "name": "Production Acceptance",
+      "stage": "Deployment",
+      "owner": "operations-lead",
+      "required_approver": "operations-lead",
+      "entry_criteria": [
+        "Gate G8 PASSED"
+      ],
+      "required_artifacts": [
+        "Deployment log",
+        "Smoke test execution output"
+      ],
+      "exit_criteria": [
+        "Deployment executed cleanly without unplanned downtime",
+        "Post-deployment smoke tests passed 100%",
+        "Health endpoints (/healthz, /ready) returning 200 OK",
+        "Zero regression in error rates post-rollout"
+      ],
+      "automated_check": "verify_production_deployment"
+    },
+    "G10": {
+      "name": "Operational Acceptance",
+      "stage": "Observability & SRE",
+      "owner": "sre-lead",
+      "required_approver": "sre-lead",
+      "entry_criteria": [
+        "Gate G9 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/operations/*.md"
+      ],
+      "exit_criteria": [
+        "Telemetry pipeline ingesting logs, metrics, and traces",
+        "Dashboards rendering real-time telemetry",
+        "SLO alerting rules armed and operational",
+        "Runbooks verified and accessible"
+      ],
+      "automated_check": "verify_operational_telemetry"
+    },
+    "G11": {
+      "name": "Closure & Governance",
+      "stage": "Governance",
+      "owner": "engineering-governance-lead",
+      "required_approver": "engineering-governance-lead",
+      "entry_criteria": [
+        "Gate G10 PASSED"
+      ],
+      "required_artifacts": [
+        "docs/governance/*.md",
+        "governance/traceability_ledger.json"
+      ],
+      "exit_criteria": [
+        "Complete traceability chain verified from OBJ-XXX to release",
+        "Documentation confirmed synchronized with codebase",
+        "DORA metrics recorded",
+        "Lessons learned and retrospective archived",
+        "Task marked CLOSED in traceability ledger"
+      ],
+      "automated_check": "verify_governance_closure"
+    }
+  }
+}
