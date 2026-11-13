@@ -5,6 +5,7 @@
 param(
     [switch]$Global,
     [switch]$Submodule,
+    [switch]$Update,
     [string]$TargetDir = "."
 )
 
@@ -13,6 +14,17 @@ $RepoUrl = "https://github.com/hetpatel-dev/agentic-sdlc-os.git"
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "         AGENTIC SDLC OS — UNIVERSAL PROJECT INSTALLER                          " -ForegroundColor Cyan
 Write-Host "================================================================================" -ForegroundColor Cyan
+
+if ($Update) {
+    # Upgrade existing project installation while preserving project files and tasks
+    Write-Host "[UPDATE] Upgrading Agentic SDLC OS in project at '$TargetDir'..." -ForegroundColor Yellow
+    $updateScript = Join-Path $PSScriptRoot "update.py"
+    if (-not (Test-Path $updateScript)) {
+        $updateScript = "scripts/update.py"
+    }
+    python $updateScript --target $TargetDir
+    exit $LASTEXITCODE
+}
 
 if ($Global) {
     # 1. Global Installation (Available across all projects on this machine)

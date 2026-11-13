@@ -51,6 +51,58 @@ def cmd_init(args):
     print(f"     Tasks tracked: {len(ledger.get('tasks', {}))}")
     print(f"     Requirements tracked: {len(ledger.get('requirements', {}))}")
 
+def cmd_migrate(args):
+    ledger = load_ledger()
+    changed = False
+
+    # Create timestamped backup before migration
+    bak_path = LEDGER_PATH.with_suffix(f".bak.{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.json")
+    with open(bak_path, "w", encoding="utf-8") as f:
+        json.dump(ledger, f, indent=2)
+
+    # 1. Ensure required top-level collections
+    for key in ["objectives", "requirements", "adrs", "tasks"]:
+        if key not in ledger or not isinstance(ledger[key], dict):
+            ledger[key] = {}
+            changed = True
+
+    # 2. Upgrade task records to latest schema
+    for tid, t in ledger.get("tasks", {}).items():
+        if "traceability" not in t or not isinstance(t["traceability"], dict):
+            t["traceability"] = {}
+            changed = True
+        trace = t["traceability"]
+        for field, default_val in [
+            ("objective_id", ""),
+            ("requirement_ids", []),
+            ("user_story_ids", []),
+            ("adr_ids", []),
+            ("commits", []),
+            ("test_case_ids", []),
+            ("release_version", "")
+        ]:
+            if field not in trace:
+                trace[field] = default_val
+                changed = True
+        for list_field in ["artifacts", "gate_history", "risks"]:
+            if list_field not in t:
+                t[list_field] = []
+                changed = True
+
+    target_version = getattr(args, "target_version", "1.0.1") or "1.0.1"
+    if ledger.get("version") != target_version:
+        ledger["version"] = target_version
+        changed = True
+
+    if changed:
+        save_ledger(ledger)
+        print(f"[SUCCESS] Traceability ledger schema migrated to v{target_version}.")
+        print(f"          Pre-migration backup stored at {bak_path}")
+    else:
+        if bak_path.exists():
+            bak_path.unlink()
+        print(f"[OK] Traceability ledger is already up to date (v{target_version}).")
+
 def cmd_create_objective(args):
     ledger = load_ledger()
     obj_id = args.id
@@ -422,6 +474,11 @@ def main():
     # check
     p_check = subparsers.add_parser("check", help="Audit ledger consistency")
     p_check.set_defaults(func=cmd_check)
+
+    # migrate
+    p_migrate = subparsers.add_parser("migrate", help="Migrate ledger schema to current framework version")
+    p_migrate.add_argument("--target-version", default="1.0.1", help="Target schema version")
+    p_migrate.set_defaults(func=cmd_migrate)
 
     args = parser.parse_args()
     args.func(args)

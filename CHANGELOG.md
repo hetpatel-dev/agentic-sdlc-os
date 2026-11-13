@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Distribution & Links:** Fixed broken relative links in `rules/GEMINI.md`; synchronized 15 modular rule files to `rules/`; added offline local source copy fallback to `scripts/install.ps1` and `scripts/install.sh`; dynamically resolved Git bash path and enforced pre-commit exit codes in `scripts/bootstrap.ps1`.
 - **Consumer Scaffolding Isolation:** Updated `scripts/install.ps1` and `scripts/install.sh` to strictly exclude testing/reference artifacts from new projects; scaffold only empty `docs/` subdirectories and `docs/templates/`; initialize consumer projects with a pristine empty traceability ledger (`tasks: {}`, `requirements: {}`, `objectives: {}`, `adrs: {}`) written as UTF-8 without BOM.
 - **Traceability Numbering from 1:** Updated `scripts/traceability_cli.py` to auto-assign initial IDs starting from 1 (`TASK-001`, `OBJ-001`, `REQ-001`, `ADR-0001`); aligned standard documentation templates, agent directives, and rules to index starting at 1.
+- **Enterprise Update Strategy & Tooling:** Implemented non-destructive updater CLI (`scripts/update.py`), added `-Update`/`--update` flags to installer scripts, created `docs/governance/UPDATE_STRATEGY.md`, added `migrate` subcommand to `scripts/traceability_cli.py`, featuring pre-update snapshot backups, in-place ledger schema evolution, and guaranteed protection for project source code, tests, documentation, and tasks.
 
 ## [1.0.0] - 2026-11-13
 

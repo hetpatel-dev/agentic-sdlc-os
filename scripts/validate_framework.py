@@ -226,7 +226,8 @@ class TestFrameworkIntegrity(unittest.TestCase):
             "scripts/bootstrap.ps1",
             "scripts/bootstrap.sh",
             "scripts/install.ps1",
-            "scripts/install.sh"
+            "scripts/install.sh",
+            "scripts/update.py"
         ]
         for s in scripts:
             p = Path(s)

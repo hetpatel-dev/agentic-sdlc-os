@@ -7,12 +7,14 @@ set -e
 REPO_URL="https://github.com/hetpatel-dev/agentic-sdlc-os.git"
 GLOBAL_MODE=false
 SUBMODULE_MODE=false
+UPDATE_MODE=false
 TARGET_DIR="."
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --global|-g) GLOBAL_MODE=true ;;
         --submodule|-s) SUBMODULE_MODE=true ;;
+        --update|-u) UPDATE_MODE=true ;;
         --target|-t) TARGET_DIR="$2"; shift ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
@@ -22,6 +24,13 @@ done
 echo "================================================================================"
 echo "         AGENTIC SDLC OS — UNIVERSAL PROJECT INSTALLER                          "
 echo "================================================================================"
+
+if [ "$UPDATE_MODE" = true ]; then
+    echo "[UPDATE] Upgrading Agentic SDLC OS in project at '$TARGET_DIR'..."
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    python3 "$SCRIPT_DIR/update.py" --target "$TARGET_DIR" || python "$SCRIPT_DIR/update.py" --target "$TARGET_DIR"
+    exit $?
+fi
 
 if [ "$GLOBAL_MODE" = true ]; then
     PLUGIN_DIR="$HOME/.gemini/config/plugins/agentic-sdlc-os"
