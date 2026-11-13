@@ -210,7 +210,82 @@ python scripts/validate_framework.py
 
 ---
 
-## 6. Antigravity & Model Context Protocol (MCP) Integration
+## 6. How to Use Agentic SDLC OS in Other Projects
+
+You can use this framework across any other software repository using one of the following methods:
+
+### Option A: Global Plugin Installation (Recommended for Local Machine)
+Install once to make all 30 agents, 18 skills, and rules available across **every project** on your machine:
+
+```bash
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.ps1 | iex -Global"
+
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.sh | bash -s -- --global
+```
+
+Or manually clone into your global plugins directory:
+```bash
+git clone https://github.com/hetpatel-dev/agentic-sdlc-os.git ~/.gemini/config/plugins/agentic-sdlc-os
+```
+
+Verify in Antigravity CLI:
+```bash
+agy plugin list
+```
+
+---
+
+### Option B: Project-Level One-Liner (Best for Standalone Repositories)
+Inside the root directory of your target project:
+
+```bash
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.ps1 | iex"
+
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.sh | bash
+```
+
+This sets up `.agents/`, `governance/`, `scripts/`, `AGENTS.md`, and runs the bootstrap verification.
+
+---
+
+### Option C: Git Submodule (Best for Teams Sharing via Git)
+Add the framework as a pinned version-controlled submodule in your project:
+
+```bash
+git submodule add https://github.com/hetpatel-dev/agentic-sdlc-os.git .agents/sdlc-os
+```
+
+In `.agents/skills.json` and `.agents/agents.json`:
+```json
+{
+  "entries": [
+    { "path": ".agents/sdlc-os/.agents/skills" },
+    { "path": ".agents/sdlc-os/.agents/agents" }
+  ]
+}
+```
+
+---
+
+### Option D: Workspace JSON Manifest Inheritance
+If the framework is cloned in a central team folder (e.g., `~/tools/agentic-sdlc-os`), add `.agents/skills.json` to any project:
+```json
+{
+  "inherits": [
+    {
+      "path": "~/tools/agentic-sdlc-os/.agents/skills.json"
+    }
+  ]
+}
+```
+
+---
+
+## 7. Antigravity & Model Context Protocol (MCP) Integration
 
 This framework configures native MCP servers in `.agents/mcp_config.json`:
 - `sdlc-traceability`: Enables agents to query task status and register artifacts via MCP tools.

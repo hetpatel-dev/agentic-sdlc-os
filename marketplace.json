@@ -1,0 +1,17 @@
+{
+  "name": "hetpatel-dev",
+  "interface": {
+    "displayName": "Het Patel Developer Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "agentic-sdlc-os",
+      "source": "https://github.com/hetpatel-dev/agentic-sdlc-os.git",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

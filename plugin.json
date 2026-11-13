@@ -5,8 +5,10 @@
   "author": {
     "name": "Software Factory Team"
   },
-  "homepage": "https://github.com/software-factory/agentic-sdlc-os",
+  "homepage": "https://github.com/hetpatel-dev/agentic-sdlc-os",
+  "repository": "https://github.com/hetpatel-dev/agentic-sdlc-os.git",
   "license": "Apache-2.0",
+  "logo": "assets/logo.svg",
   "keywords": [
     "antigravity",
     "sdlc",
