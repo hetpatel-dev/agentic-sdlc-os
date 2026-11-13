@@ -24,3 +24,8 @@ Every deliverable advances through formal Quality Gates (G0 through G11). Gates 
 - **No Advancement on Failure:** If any required check fails, the task returns to the assigned lead agent for remediation.
 - **Automated Validation:** All automated gate checks must be verified via `python scripts/gate_validator.py --gate <Gx> --task <TASK_ID>`.
 - **Audit Logging:** Every gate transition is recorded in `governance/traceability_ledger.json` with timestamp, agent name, and artifact checksums.
+
+## 3. Framework Upgrade Governance
+- **Ledger Invariants:** Upgrades must never delete or overwrite existing tasks, requirements, objectives, or gate approval records in `governance/traceability_ledger.json`.
+- **Pre-Update Backups:** Upgrades must execute a snapshot backup before making modifications.
+- **Rollback Readiness:** If post-update gate validation or framework tests fail, the updater must provide an instant rollback mechanism.

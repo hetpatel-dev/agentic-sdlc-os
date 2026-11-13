@@ -49,7 +49,7 @@ flowchart TD
 
 ## 1. The 16 SDLC Domains & Agent Catalog
 
-The operating system organizes engineering responsibilities across 16 core disciplines, 7 cross-domain oversight agents, and specialized execution subagents located in `.agents/agents/`:
+The operating system organizes engineering responsibilities across 16 core disciplines, 8 cross-domain oversight agents, and specialized execution subagents located in `.agents/agents/` (31 agents total):
 
 | Domain | Lead Agent | Responsibilities | Key Quality Gate |
 | :--- | :--- | :--- | :--- |
@@ -216,7 +216,7 @@ python scripts/validate_framework.py
 You can use this framework across any other software repository using one of the following methods:
 
 ### Option A: Global Plugin Installation (Recommended for Local Machine)
-Install once to make all 30 agents, 18 skills, and rules available across **every project** on your machine:
+Install once to make all 31 agents, 18 skills, and rules available across **every project** on your machine:
 
 ```bash
 # Windows PowerShell
@@ -238,18 +238,22 @@ agy plugin list
 
 ---
 
-### Option B: Project-Level One-Liner (Best for Standalone Repositories)
+### Option B: Project-Level Installation (Best for Standalone Repositories)
 Inside the root directory of your target project:
 
 ```bash
 # Windows PowerShell
-powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -TargetDir .
 
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/hetpatel-dev/agentic-sdlc-os/main/scripts/install.sh | bash
+bash scripts/install.sh -t .
 ```
 
-This sets up `.agents/`, `governance/`, `scripts/`, `AGENTS.md`, and runs the bootstrap verification.
+#### What Gets Scaffolded into New Projects:
+- **Clean Folder Structure**: `.agents/`, `scripts/`, `governance/schemas/`, `governance/quality_gates.json`, `AGENTS.md`, `GEMINI.md`.
+- **Docs & Templates Only**: Creates clean, empty subdirectories under `docs/` (`adr`, `api`, `architecture`, `database`, `governance`, `operations`, `product`, `releases`, `requirements`, `security`, `testing`, `testing/performance`) and copies only the 8 markdown document templates in `docs/templates/`.
+- **Zero Test Artifacts**: Testing and sample files (`0001-jwt...`, `ARCH-101...`, `auth-v1.yaml`, `src/auth/`, `tests/test_auth_service.py`) are strictly excluded.
+- **Pristine Ledger & Numbering from 1**: Initializes an empty `traceability_ledger.json`. All newly created tasks (`TASK-001`), objectives (`OBJ-001`), requirements (`REQ-001`), and ADRs (`ADR-0001`) automatically start numbering from `1`.
 
 ---
 
@@ -286,7 +290,59 @@ If the framework is cloned in a central team folder (e.g., `~/tools/agentic-sdlc
 
 ---
 
-## 7. Antigravity & Model Context Protocol (MCP) Integration
+## 7. Enterprise Update Strategy & Safe Framework Upgrades
+
+As Agentic SDLC OS continues to evolve, downstream consumer projects can safely upgrade their framework core without overwriting or disrupting application code, tests, documentation, or task histories.
+
+For comprehensive architectural specifications, see [UPDATE_STRATEGY.md](./docs/governance/UPDATE_STRATEGY.md).
+
+### Non-Intrusive Upgrade Guarantees
+- **Protected Project Space (Untouched)**: `src/`, `tests/`, `docs/` (all project requirements, architecture RFCs, ADRs, test plans, threat models), and project configuration files are **never modified or overwritten**.
+- **Historical Ledger Preservation**: `governance/traceability_ledger.json` is **never replaced**. An automated in-place schema migration upgrades schema keys and bumps version while preserving 100% of existing tasks, objectives, requirements, and gate records.
+- **Extension Points**: Custom agents in `.agents/agents/custom/`, custom rules in `.agents/rules/custom/`, and custom skills in `.agents/skills/custom/` are permanently preserved across updates.
+- **Pre-Update Snapshot & Instant Rollback**: An automated snapshot is saved to `.agents/.backup/pre-update-<version>-<timestamp>/` before any file write, enabling one-command rollback if needed.
+
+### How to Upgrade Downstream Projects
+
+#### Via Windows PowerShell
+```powershell
+# Upgrade current project to the latest framework release
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Update
+
+# Upgrade a specific target project directory
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Update -TargetDir C:\path\to\project
+```
+
+#### Via POSIX (Linux / macOS)
+```bash
+# Upgrade current project to the latest framework release
+bash scripts/install.sh --update
+
+# Upgrade a specific target project directory
+bash scripts/install.sh --update -t /path/to/project
+```
+
+#### Via Python Updater Directly
+```bash
+# Preview planned changes without modifying any files (Dry-Run)
+python scripts/update.py --dry-run
+
+# Execute safe upgrade
+python scripts/update.py
+
+# Rollback to a previous snapshot if needed
+python scripts/update.py --rollback ".agents/.backup/pre-update-1.0.0-20261113T054443Z"
+```
+
+#### Standalone Ledger Schema Migration
+```bash
+# Migrate ledger schema to the latest version in-place
+python scripts/traceability_cli.py migrate
+```
+
+---
+
+## 8. Antigravity & Model Context Protocol (MCP) Integration
 
 This framework configures native MCP servers in `.agents/mcp_config.json`:
 - `sdlc-traceability`: Enables agents to query task status and register artifacts via MCP tools.

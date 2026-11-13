@@ -86,3 +86,15 @@ Automated gate validation is executed via `python scripts/gate_validator.py --ga
 - `scripts/`: Production automation tools (gate validator, traceability CLI, security scanning, bootstrap).
 - `src/`: Application source code.
 - `tests/`: Automated unit, integration, contract, and E2E test suites.
+
+---
+
+## 6. Upgrades & Extension Conventions
+
+To enable consumer repositories to upgrade the framework without losing project assets:
+- **Project Space Protection**: Source code (`src/`), tests (`tests/`), project documents (`docs/`), and task ledger history (`governance/traceability_ledger.json`) are permanently preserved.
+- **Custom Extension Points**:
+  - Custom Agents: `.agents/agents/custom/*.md`
+  - Custom Rules: `.agents/rules/custom/*.md`
+  - Custom Skills: `.agents/skills/custom/*/SKILL.md`
+- **Safe Upgrade Tooling**: Run `powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Update`, `bash scripts/install.sh --update`, or `python scripts/update.py`. Automatic snapshots are saved to `.agents/.backup/` with instant rollback available.
