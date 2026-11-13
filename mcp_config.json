@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "sdlc-traceability": {
+      "command": "python",
+      "args": ["scripts/mcp_traceability_server.py"],
+      "env": {
+        "SDLC_ROOT": "."
+      }
+    },
+    "sdlc-gate-validator": {
+      "command": "python",
+      "args": ["scripts/mcp_gate_server.py"],
+      "env": {
+        "SDLC_ROOT": "."
+      }
+    }
+  }
+}
