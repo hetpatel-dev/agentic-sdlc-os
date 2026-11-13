@@ -6,9 +6,6 @@ tools:
   - write_file
   - edit_file
   - run_command
-  - call_mcp_tool
-  - list_resources
-  - read_resource
 subagent: true
 model: inherit
 commandExecutionPolicy: sandbox

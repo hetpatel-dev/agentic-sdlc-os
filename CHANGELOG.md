@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Agent Catalog:** Created dedicated `code-reviewer.md` persona for Gate G4 independent review (31 agents total).
-- **Agent Tools:** Granted `call_mcp_tool`, `list_resources`, and `read_resource` permissions to coordinating and auditing agents.
+- **Agent Tools:** Standardized native tool definitions across all 31 agents; ensured compatibility with Antigravity CLI 1.5+ dynamic MCP tool injection.
 - **Gate Validator:** Fixed monotonic gate advancement bug preventing gate regressions; added AST-based exception swallow detection for Python; normalized Windows path matching; added concrete evidence validation for Gates G7, G8, G9, G10, and G11.
 - **Traceability CLI:** Added CLI subcommands for `create-objective`, `create-requirement`, and `create-adr`; populated top-level ledger dictionaries for OBJ-001, OBJ-002, REQ-101, REQ-102, REQ-201, and ADR-0001; reconciled governance history for TASK-102; regenerated traceability matrix.
 - **Security Scanner & Hooks:** Integrated Antigravity JSON stdin/stdout protocol into `scripts/security_check.py`; added Windows dangerous command patterns; excluded binary files from directory scan; re-enabled automated pre-command and post-write hooks.

@@ -12,9 +12,6 @@ tools:
   - manage_task
   - schedule
   - search_web
-  - call_mcp_tool
-  - list_resources
-  - read_resource
 subagent: true
 mainAgent: true
 model: inherit

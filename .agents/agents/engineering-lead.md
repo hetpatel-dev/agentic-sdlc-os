@@ -9,9 +9,6 @@ tools:
   - invoke_subagent
   - send_message
   - manage_subagents
-  - call_mcp_tool
-  - list_resources
-  - read_resource
 subagent: true
 model: inherit
 commandExecutionPolicy: sandbox

@@ -4,7 +4,6 @@ description: Performs rigorous independent code review, verifying coding standar
 tools:
   - read_file
   - run_command
-  - call_mcp_tool
 subagent: true
 model: inherit
 commandExecutionPolicy: sandbox
