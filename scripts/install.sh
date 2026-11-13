@@ -56,16 +56,29 @@ else
     echo "[DOWNLOAD] Cloning latest release..."
     git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
 
-    echo "[DEPLOY] Copying .agents, governance, scripts to '$TARGET_DIR'..."
+    echo "[DEPLOY] Copying .agents, governance, docs, scripts to '$TARGET_DIR'..."
     cp -r "$TEMP_DIR/.agents" "$TARGET_DIR/"
     cp -r "$TEMP_DIR/governance" "$TARGET_DIR/"
     cp -r "$TEMP_DIR/scripts" "$TARGET_DIR/"
+
+    if [ ! -d "$TARGET_DIR/docs" ]; then
+        cp -r "$TEMP_DIR/docs" "$TARGET_DIR/"
+    else
+        mkdir -p "$TARGET_DIR/docs/templates"
+        cp -r "$TEMP_DIR/docs/templates/"* "$TARGET_DIR/docs/templates/"
+        for d in adr api architecture database governance operations product releases requirements security testing; do
+            mkdir -p "$TARGET_DIR/docs/$d"
+        done
+    fi
 
     if [ ! -f "$TARGET_DIR/AGENTS.md" ]; then
         cp "$TEMP_DIR/AGENTS.md" "$TARGET_DIR/"
     fi
     if [ ! -f "$TARGET_DIR/GEMINI.md" ]; then
         cp "$TEMP_DIR/GEMINI.md" "$TARGET_DIR/"
+    fi
+    if [ ! -f "$TARGET_DIR/.gitignore" ]; then
+        cp "$TEMP_DIR/.gitignore" "$TARGET_DIR/"
     fi
 
     rm -rf "$TEMP_DIR"

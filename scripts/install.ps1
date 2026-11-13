@@ -55,17 +55,31 @@ if ($Submodule) {
     Write-Host "[DOWNLOAD] Cloning latest release from GitHub..." -ForegroundColor Yellow
     git clone --depth 1 $RepoUrl $tempDir
 
-    # Copy .agents, rules, skills, governance, scripts into target
+    # Copy .agents, rules, skills, governance, docs, scripts into target
     Write-Host "[DEPLOY] Copying .agents, governance, docs, scripts to '$TargetDir'..." -ForegroundColor Yellow
     Copy-Item -Path "$tempDir\.agents" -Destination $TargetDir -Recurse -Force
     Copy-Item -Path "$tempDir\governance" -Destination $TargetDir -Recurse -Force
     Copy-Item -Path "$tempDir\scripts" -Destination $TargetDir -Recurse -Force
     
+    if (-not (Test-Path (Join-Path $TargetDir "docs"))) {
+        Copy-Item -Path "$tempDir\docs" -Destination $TargetDir -Recurse -Force
+    } else {
+        $destTemplates = Join-Path $TargetDir "docs\templates"
+        New-Item -ItemType Directory -Path $destTemplates -Force | Out-Null
+        Copy-Item -Path "$tempDir\docs\templates\*" -Destination $destTemplates -Recurse -Force
+        foreach ($d in @("adr", "api", "architecture", "database", "governance", "operations", "product", "releases", "requirements", "security", "testing")) {
+            New-Item -ItemType Directory -Path (Join-Path $TargetDir "docs\$d") -Force | Out-Null
+        }
+    }
+
     if (-not (Test-Path (Join-Path $TargetDir "AGENTS.md"))) {
         Copy-Item -Path "$tempDir\AGENTS.md" -Destination $TargetDir -Force
     }
     if (-not (Test-Path (Join-Path $TargetDir "GEMINI.md"))) {
         Copy-Item -Path "$tempDir\GEMINI.md" -Destination $TargetDir -Force
+    }
+    if (-not (Test-Path (Join-Path $TargetDir ".gitignore"))) {
+        Copy-Item -Path "$tempDir\.gitignore" -Destination $TargetDir -Force
     }
     
     # Clean up temp

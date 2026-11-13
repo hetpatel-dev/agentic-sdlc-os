@@ -33,11 +33,21 @@ VALID_ANTIGRAVITY_TOOLS = {
 class TestFrameworkIntegrity(unittest.TestCase):
 
     def test_root_files_exist(self):
-        root_files = ["AGENTS.md", "GEMINI.md", ".gitignore", "LICENSE", "plugin.json"]
-        for rf in root_files:
+        # Mandatory operating charters in every workspace using Agentic SDLC OS
+        mandatory_files = ["AGENTS.md", "GEMINI.md"]
+        for rf in mandatory_files:
             p = Path(rf)
             self.assertTrue(p.exists(), f"Missing root file: {rf}")
             self.assertGreater(p.stat().st_size, 0, f"Root file is empty: {rf}")
+
+        # In framework source repository or plugin distribution, verify framework-level files
+        is_framework_repo = Path(".github/workflows/sdlc-gates.yml").exists() or Path("assets/logo.svg").exists()
+        if is_framework_repo:
+            framework_files = [".gitignore", "LICENSE", "plugin.json"]
+            for rf in framework_files:
+                p = Path(rf)
+                self.assertTrue(p.exists(), f"Missing framework root file: {rf}")
+                self.assertGreater(p.stat().st_size, 0, f"Root file is empty: {rf}")
 
     def test_all_15_rules_exist_and_bounded(self):
         rules_dir = Path(".agents/rules")
@@ -142,10 +152,12 @@ class TestFrameworkIntegrity(unittest.TestCase):
             ".agents/agents.json",
             ".agents/hooks.json",
             ".agents/mcp_config.json",
-            "plugin.json",
             "governance/quality_gates.json",
             "governance/traceability_ledger.json"
         ]
+        # Validate plugin.json if present or if running in framework source repository
+        if Path("plugin.json").exists() or Path(".github/workflows/sdlc-gates.yml").exists():
+            manifests.append("plugin.json")
         for m in manifests:
             p = Path(m)
             self.assertTrue(p.exists(), f"Missing manifest file: {m}")
